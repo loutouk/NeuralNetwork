@@ -1,7 +1,5 @@
 import java.util.Random;
 
-// TODO replace all output(1-output) by the call to the derivative of the logistic function
-
 public class NeuralNetwork {
 
     private Layer[] layers;
@@ -147,7 +145,7 @@ public class NeuralNetwork {
                 for(int currentWeight=0 ; currentWeight<layers[currentLayer].weightsPerNeurons[currentNeuron].length ; currentWeight++){
 
                     nextLayerInputs[currentWeight] += layers[currentLayer].weightsPerNeurons[currentNeuron][currentWeight] *
-                                                      currentInputs[currentNeuron];
+                            currentInputs[currentNeuron];
 
                 }
             }
@@ -200,7 +198,7 @@ public class NeuralNetwork {
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
                     sumWeightByPreviousNeuron += currentLayer.weightsPerNeurons[j][k] * layers[i+1].deltaPerNeurons[k];
                 }
-                currentLayer.deltaPerNeurons[j] = sumWeightByPreviousNeuron * currentLayer.outputPerNeurons[j]*(1-currentLayer.outputPerNeurons[j]);
+                currentLayer.deltaPerNeurons[j] = sumWeightByPreviousNeuron * currentLayer.derivativeActivationFunction(currentLayer.outputPerNeurons[j]);
 //                //System.out.println("SECOND " + i);
 //                //System.out.println(currentLayer.deltaPerNeurons[j]);
             }
@@ -295,7 +293,6 @@ public class NeuralNetwork {
             }
         }
 
-        // TODO use this function instead of the hard coded implementation
         public double derivativeActivationFunction(double x) throws trainingError {
             switch (activationFunction){
                 case "sigmoid":
