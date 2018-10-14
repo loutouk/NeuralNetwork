@@ -12,7 +12,7 @@ public class Main {
         try {
             nn.setDataSet(dataSet);
             try {
-                nn.train( 0.99, 0.1,1);
+                nn.train( 0.1, 0.1,100000);
             } catch (trainingError trainingError) {
                 trainingError.printStackTrace();
             }

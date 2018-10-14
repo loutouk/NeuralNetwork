@@ -1,5 +1,7 @@
 import java.util.Random;
 
+// TODO replace all output(1-output) by the call to the derivative of the logistic function
+
 public class NeuralNetwork {
 
     private Layer[] layers;
@@ -62,16 +64,17 @@ public class NeuralNetwork {
                 }else{
                     layers[i].bias[j] = getRandom();
                 }
-//                System.out.println("Layer " + i + " neuron " + j + " bias " + layers[i].bias[j]);
+                //System.out.println("Layer " + i + " neuron " + j + " bias " + layers[i].bias[j]);
 
                 // each weight for the current neuron
                 for(int k=0 ; k<layers[i].weightsPerNeurons[j].length ; k++){
                     layers[i].weightsPerNeurons[j][k] = getRandom();
-//                    System.out.println("Layer " + i + " neuron " + j + " weight " + k + " " + layers[i].weightsPerNeurons[j][k]);
+                    //System.out.println("Layer " + i + " neuron " + j + " weight " + k + " " + layers[i].weightsPerNeurons[j][k]);
                 }
 
             }
         }
+        //System.out.println("********************************************************************");
     }
 
     private void initDelta(){
@@ -108,14 +111,15 @@ public class NeuralNetwork {
                 double[] errors = new double[outputs.length];
 
                 for(int error=0 ; error<errors.length ; error++){
-//                    System.out.println("Data " + dataSet.getDatas()[i].getInputs()[0] + " " + dataSet.getDatas()[i].getInputs()[1]);
-//                    System.out.println("Output " + error + " = " + outputs[error]);
+                    //System.out.println("Data " + dataSet.getDatas()[i].getInputs()[0] + " " + dataSet.getDatas()[i].getInputs()[1]);
+                    //System.out.println("Output " + error + " = " + outputs[error]);
                     errors[error] = applyErrorFunction(outputs[error], dataSet.getDatas()[i].getSolution()[error]);
+                    //System.out.println("Error " + error + " = " + errors[error]);
                     totalError += errors[error];
                 }
 
 
-                // Run backpropagation 
+                // Run backpropagation
                 backPropagation(dataSet.getDatas()[i].getInputs(), dataSet.getDatas()[i].getSolution(), outputs);
 
                 // update the weights
@@ -130,7 +134,7 @@ public class NeuralNetwork {
 
     }
 
-    private double[] forwardPropagation(double[] inputs) {
+    private double[] forwardPropagation(double[] inputs) throws trainingError {
         // Our first layer start with the data input
         double[] currentInputs = inputs;
         double[] nextLayerInputs;
@@ -158,6 +162,7 @@ public class NeuralNetwork {
                 nextLayerInputs[nextLayerNeuron] = layers[currentLayer + 1].activationFunction(nextLayerInputs[nextLayerNeuron]);
                 // Save the output for the backpropagation algorithm
                 layers[currentLayer + 1].outputPerNeurons[nextLayerNeuron] = nextLayerInputs[nextLayerNeuron];
+                //System.out.println("OUTPUT Layer " + (currentLayer + 1) + " neuron " + nextLayerNeuron + " = " + nextLayerInputs[nextLayerNeuron]);
             }
 
             currentInputs = nextLayerInputs;
@@ -179,7 +184,9 @@ public class NeuralNetwork {
         // For each neuron of the last layer
         for(int i=0 ; i<lastLayer.neuronNumber ; i++){
             // compute the gradient ascent of the neuron
-            lastLayer.deltaPerNeurons[i] = applyDerivativeErrorFunction(solutions[i], outputs[i]);
+            lastLayer.deltaPerNeurons[i] = outputs[i]*(1-outputs[i]) * applyDerivativeErrorFunction(solutions[i], outputs[i]);
+//            //System.out.println("FIRST " + i);
+//            //System.out.println(lastLayer.deltaPerNeurons[i] );
         }
 
         // For the other layer, the computation is the same
@@ -193,7 +200,9 @@ public class NeuralNetwork {
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
                     sumWeightByPreviousNeuron += currentLayer.weightsPerNeurons[j][k] * layers[i+1].deltaPerNeurons[k];
                 }
-                currentLayer.deltaPerNeurons[j] = sumWeightByPreviousNeuron;
+                currentLayer.deltaPerNeurons[j] = sumWeightByPreviousNeuron * currentLayer.outputPerNeurons[j]*(1-currentLayer.outputPerNeurons[j]);
+//                //System.out.println("SECOND " + i);
+//                //System.out.println(currentLayer.deltaPerNeurons[j]);
             }
         }
 
@@ -203,15 +212,17 @@ public class NeuralNetwork {
         Layer firstLayer = layers[0];
         for(int i=0 ; i<firstLayer.deltaPerWeights.length ; i++){
             for(int j=0 ; j<firstLayer.deltaPerWeights[i].length ; j++){
+//                //System.out.println("DELTA FIRST LAYER " + layers[1].deltaPerNeurons[i]);
                 firstLayer.deltaPerWeights[i][j] = inputs[i] * layers[1].deltaPerNeurons[i];
             }
         }
 
         // For the other layers, the output to consider is the output of the precedent layer
-        for(int i=1 ; i<layers.length-2; i++){
+        for(int i=1 ; i<layers.length-1; i++){
             Layer currentLayer = layers[i];
             for(int j=0 ; j<currentLayer.weightsPerNeurons.length ; j++){
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
+//                    //System.out.println("DELTA OTHER " + layers[i+1].deltaPerNeurons[k]);
                     currentLayer.deltaPerWeights[j][k] = layers[i+1].deltaPerNeurons[k] * currentLayer.outputPerNeurons[j];
                 }
             }
@@ -219,20 +230,35 @@ public class NeuralNetwork {
     }
 
     private void updateWeights(double learningRate) {
-        for(int i=0 ; i<layers.length-2 ; i++){
+        for(int i=0 ; i<layers.length-1 ; i++){
             Layer currentLayer = layers[i];
             for(int j=0 ; j<currentLayer.weightsPerNeurons.length ; j++){
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
                     // Update the weight
-//                    System.out.println("BEFORE UPDATE: Layer " + i + " neuron " + j + " weight " + k + " --> "  + currentLayer.weightsPerNeurons[j][k]);
-//                    System.out.println("DELTA " + currentLayer.deltaPerWeights[j][k]);
+                    //System.out.println("-------------------------------------------------------------------------------------");
+                    //System.out.println("BEFORE UPDATE: Layer " + i + " neuron " + j + " weight " + k + " --> "  + currentLayer.weightsPerNeurons[j][k]);
+                    //System.out.println("DELTA WEIGHT" + currentLayer.deltaPerWeights[j][k]);
                     currentLayer.weightsPerNeurons[j][k] -= currentLayer.deltaPerWeights[j][k] * learningRate;
-//                    System.out.println("AFTER UPDATE: Layer " + i + " neuron " + j + " weight " + k + " --> "  +  + currentLayer.weightsPerNeurons[j][k]);
+                    //System.out.println("AFTER UPDATE: Layer " + i + " neuron " + j + " weight " + k + " --> "  +  + currentLayer.weightsPerNeurons[j][k]);
 
                 }
                 // Update the bias
+                //System.out.println("-------------------------------------------------------------------------------------");
+                //System.out.println("BEFORE UPDATE BIAS: Layer " + i + " neuron " + j + " --> " + currentLayer.bias[j]);
+                //System.out.println("DELTA NEURON" + currentLayer.deltaPerNeurons[j]);
                 currentLayer.bias[j] -= currentLayer.deltaPerNeurons[j] * learningRate;
+                //System.out.println("AFTER UPDATE BIAS: Layer " + i + " neuron " + j + " --> " + currentLayer.bias[j]);
             }
+        }
+        // Update the last layer bias neuron
+        Layer lastLayer = layers[layers.length-1];
+        // For each neuron of the last layer
+        for(int i=0 ; i<lastLayer.neuronNumber ; i++){
+            //System.out.println("-------------------------------------------------------------------------------------");
+            //System.out.println("BEFORE UPDATE BIAS: Layer " + (layers.length-1) + " neuron " + i + " --> " + lastLayer.bias[i]);
+            //System.out.println("DELTA NEURON" + lastLayer.deltaPerNeurons[i]);
+            lastLayer.bias[i] -= lastLayer.deltaPerNeurons[i] * learningRate;
+            //System.out.println("AFTER UPDATE BIAS: Layer " + (layers.length-1) + " neuron " + i + " --> " + lastLayer.bias[i]);
         }
     }
 
@@ -260,24 +286,22 @@ public class NeuralNetwork {
             this.bias = new double[neuronNumber];
         }
 
-        public double activationFunction(double x){
+        public double activationFunction(double x) throws trainingError {
             switch (activationFunction){
                 case "sigmoid":
                     return (1 / (1 + Math.exp(-x)));
                 default:
-                    System.err.println("No activation function found for this layer.");
-                    return 0.0;
+                    throw new trainingError("The error function " + errorFunction + " is not defined.");
             }
         }
 
         // TODO use this function instead of the hard coded implementation
-        public double derivativeActivationFunction(double x){
+        public double derivativeActivationFunction(double x) throws trainingError {
             switch (activationFunction){
                 case "sigmoid":
                     return x * (1.0 - x);
                 default:
-                    System.err.println("No activation function found for this layer.");
-                    return 0.0;
+                    throw new trainingError("The error function " + errorFunction + " is not defined.");
             }
         }
     }
@@ -296,10 +320,10 @@ public class NeuralNetwork {
 
     }
 
-    public double applyDerivativeErrorFunction(double output, double target) throws trainingError {
+    public double applyDerivativeErrorFunction(double solution, double output) throws trainingError {
         switch (errorFunction){
             case "squaredError":
-                return output - target;
+                return output - solution;
             default:
                 throw new trainingError("The error function " + errorFunction + " is not defined.");
         }
