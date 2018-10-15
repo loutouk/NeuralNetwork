@@ -30,7 +30,6 @@ public class NeuralNetwork {
             else{
                 layers[i+1] = new Layer(hiddenNeuronNumber, hiddenNeuronNumber, "sigmoid");
             }
-
         }
 
         // Init the output Layer
@@ -38,7 +37,6 @@ public class NeuralNetwork {
 
         initWeightAndBias();
         initDelta();
-
     }
 
     public void setDataSet(DataSet dataSet) throws trainingError {
@@ -50,23 +48,6 @@ public class NeuralNetwork {
     }
 
     private void initWeightAndBias(){
-//        layers[0].bias[0] = 0.0;
-//        layers[0].bias[1] = 0.0;
-//
-//        layers[1].bias[0] = -0.3;
-//        layers[1].bias[1] = 0.4;
-//        layers[2].bias[0] = -0.7;
-//
-//        layers[0].weightsPerNeurons[0][0] = -0.3;
-//        layers[0].weightsPerNeurons[1][0] = 0.2;
-//        layers[0].weightsPerNeurons[0][1] = -0.8;
-//        layers[0].weightsPerNeurons[1][1] = 0.4;
-//
-//        layers[1].weightsPerNeurons[0][0] = 0.5;
-//        layers[1].weightsPerNeurons[1][0] = -0.2;
-
-
-
         // each layer
         for(int i=0 ; i<layers.length ; i++){
             // each neuron
@@ -79,17 +60,13 @@ public class NeuralNetwork {
                 }else{
                     layers[i].bias[j] = getRandom();
                 }
-                //System.out.println("Layer " + i + " neuron " + j + " bias " + layers[i].bias[j]);
 
                 // each weight for the current neuron
                 for(int k=0 ; k<layers[i].weightsPerNeurons[j].length ; k++){
                     layers[i].weightsPerNeurons[j][k] = getRandom();
-                    //System.out.println("Layer " + i + " neuron " + j + " weight " + k + " " + layers[i].weightsPerNeurons[j][k]);
                 }
-
             }
         }
-        //System.out.println("********************************************************************");
     }
 
     private void initDelta(){
@@ -118,25 +95,16 @@ public class NeuralNetwork {
             double totalError = 0.0;
             // Iterate over all training examples
             for(int i=0 ; i<dataSet.getDatas().length; i++){
-
                 // Feed forward
                 double[] outputs = forwardPropagation(dataSet.getDatas()[i].getInputs());
-
                 // Compute the errors for each output / solution
                 double[] errors = new double[outputs.length];
-
                 for(int error=0 ; error<errors.length ; error++){
-                    //System.out.println("Input " + dataSet.getDatas()[i].getInputs()[0] + " " + dataSet.getDatas()[i].getInputs()[1]);
-                    //System.out.println("Output " + error + " = " + outputs[error]);
                     errors[error] = applyErrorFunction(outputs[error], dataSet.getDatas()[i].getSolution()[error]);
-                    //System.out.println("Error " + error + " = " + errors[error]);
                     totalError += errors[error];
                 }
-
-
                 // Run backpropagation
                 backPropagation(dataSet.getDatas()[i].getInputs(), dataSet.getDatas()[i].getSolution(), outputs);
-
                 // update the weights
                 updateWeights(learningRate);
             }
@@ -160,10 +128,9 @@ public class NeuralNetwork {
             // Compute the input * weight for each combinations of neurons/weights
             for(int currentNeuron=0 ; currentNeuron<layers[currentLayer].weightsPerNeurons.length; currentNeuron++){
                 for(int currentWeight=0 ; currentWeight<layers[currentLayer].weightsPerNeurons[currentNeuron].length ; currentWeight++){
-
-                    nextLayerInputs[currentWeight] += layers[currentLayer].weightsPerNeurons[currentNeuron][currentWeight] *
+                    nextLayerInputs[currentWeight] +=
+                            layers[currentLayer].weightsPerNeurons[currentNeuron][currentWeight] *
                             currentInputs[currentNeuron];
-
                 }
             }
 
@@ -175,32 +142,23 @@ public class NeuralNetwork {
             // Compute the activation function
             for(int nextLayerNeuron=0 ; nextLayerNeuron<nextLayerInputs.length ; nextLayerNeuron++){
                 nextLayerInputs[nextLayerNeuron] = layers[currentLayer + 1].activationFunction(nextLayerInputs[nextLayerNeuron]);
-                // Save the output for the backpropagation algorithm
                 layers[currentLayer + 1].outputPerNeurons[nextLayerNeuron] = nextLayerInputs[nextLayerNeuron];
-                //System.out.println("OUTPUT Layer " + (currentLayer + 1) + " neuron " + nextLayerNeuron + " = " + nextLayerInputs[nextLayerNeuron]);
             }
-
             currentInputs = nextLayerInputs;
-
         }
-
 
         return currentInputs;
     }
 
     private void backPropagation(double[] inputs, double[] solutions, double[] outputs) throws trainingError {
-        // Reset delta weights and delta neuronsinitDelta();
-
         // A: Compute all node delta from the right to the left, this will also give us the delta for the bias
 
         // For the last layer, the computation is different because it is the last layer
         Layer lastLayer = layers[layers.length-1];
         // For each neuron of the last layer
         for(int i=0 ; i<lastLayer.neuronNumber ; i++){
-            // compute the gradient ascent of the neuron
+            // Compute the gradient ascent of the neuron
             lastLayer.deltaPerNeurons[i] = outputs[i]*(1-outputs[i]) * applyDerivativeErrorFunction(solutions[i], outputs[i]);
-//            //System.out.println("FIRST " + i);
-//            //System.out.println(lastLayer.deltaPerNeurons[i] );
         }
 
         // For the other layer, the computation is the same
@@ -212,11 +170,13 @@ public class NeuralNetwork {
                 // For each weight
                 double sumWeightByPreviousNeuron = 0;
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
-                    sumWeightByPreviousNeuron += currentLayer.weightsPerNeurons[j][k] * layers[i+1].deltaPerNeurons[k];
+                    sumWeightByPreviousNeuron +=
+                            currentLayer.weightsPerNeurons[j][k] *
+                            layers[i+1].deltaPerNeurons[k];
                 }
-                currentLayer.deltaPerNeurons[j] = sumWeightByPreviousNeuron * currentLayer.derivativeActivationFunction(currentLayer.outputPerNeurons[j]);
-//                //System.out.println("SECOND " + i);
-//                //System.out.println(currentLayer.deltaPerNeurons[j]);
+                currentLayer.deltaPerNeurons[j] =
+                        sumWeightByPreviousNeuron *
+                        currentLayer.derivativeActivationFunction(currentLayer.outputPerNeurons[j]);
             }
         }
 
@@ -226,9 +186,7 @@ public class NeuralNetwork {
         Layer firstLayer = layers[0];
         for(int i=0 ; i<firstLayer.deltaPerWeights.length ; i++){
             for(int j=0 ; j<firstLayer.deltaPerWeights[i].length ; j++){
-//                ////System.out.println("DELTA FIRST LAYER " + layers[1].deltaPerNeurons[i]);
                 firstLayer.deltaPerWeights[i][j] = inputs[i] * layers[1].deltaPerNeurons[j];
-                //System.out.println("First layer neuron " + i + " weight " + j + " = " + inputs[i] + " *" +  layers[1].deltaPerNeurons[j]);
             }
         }
 
@@ -237,7 +195,6 @@ public class NeuralNetwork {
             Layer currentLayer = layers[i];
             for(int j=0 ; j<currentLayer.weightsPerNeurons.length ; j++){
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
-//                    ////System.out.println("DELTA OTHER " + layers[i+1].deltaPerNeurons[k]);
                     currentLayer.deltaPerWeights[j][k] = layers[i+1].deltaPerNeurons[k] * currentLayer.outputPerNeurons[j];
                 }
             }
@@ -250,30 +207,17 @@ public class NeuralNetwork {
             for(int j=0 ; j<currentLayer.weightsPerNeurons.length ; j++){
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
                     // Update the weight
-                    //System.out.println("-------------------------------------------------------------------------------------");
-                    ////System.out.println("BEFORE UPDATE: Layer " + i + " neuron " + j + " weight " + k + " --> "  + currentLayer.weightsPerNeurons[j][k]);
-                    ////System.out.println("DELTA WEIGHT" + currentLayer.deltaPerWeights[j][k]);
                     currentLayer.weightsPerNeurons[j][k] -= currentLayer.deltaPerWeights[j][k] * learningRate;
-                    //System.out.println("AFTER UPDATE: Layer " + i + " neuron " + j + " weight " + k + " --> "  +  + currentLayer.weightsPerNeurons[j][k]);
-
                 }
                 // Update the bias
-                //System.out.println("-------------------------------------------------------------------------------------");
-                ////System.out.println("BEFORE UPDATE BIAS: Layer " + i + " neuron " + j + " --> " + currentLayer.bias[j]);
-                ////System.out.println("DELTA NEURON" + currentLayer.deltaPerNeurons[j]);
                 currentLayer.bias[j] -= currentLayer.deltaPerNeurons[j] * learningRate;
-                //System.out.println("AFTER UPDATE BIAS: Layer " + i + " neuron " + j + " --> " + currentLayer.bias[j]);
             }
         }
         // Update the last layer bias neuron
         Layer lastLayer = layers[layers.length-1];
         // For each neuron of the last layer
         for(int i=0 ; i<lastLayer.neuronNumber ; i++){
-            //System.out.println("-------------------------------------------------------------------------------------");
-            ////System.out.println("BEFORE UPDATE BIAS: Layer " + (layers.length-1) + " neuron " + i + " --> " + lastLayer.bias[i]);
-            ////System.out.println("DELTA NEURON" + lastLayer.deltaPerNeurons[i]);
             lastLayer.bias[i] -= lastLayer.deltaPerNeurons[i] * learningRate;
-            //System.out.println("AFTER UPDATE BIAS: Layer " + (layers.length-1) + " neuron " + i + " --> " + lastLayer.bias[i]);
         }
     }
 
