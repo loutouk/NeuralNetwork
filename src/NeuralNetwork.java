@@ -164,7 +164,7 @@ public class NeuralNetwork {
         // For each neuron of the last layer
         for(int i=0 ; i<lastLayer.neuronNumber ; i++){
             // Compute the gradient ascent of the neuron
-            lastLayer.deltaPerNeurons[i] = outputs[i]*(1-outputs[i]) * applyDerivativeErrorFunction(solutions[i], outputs[i]);
+            lastLayer.deltaPerNeurons[i] = lastLayer.derivativeActivationFunction(outputs[i]) * applyDerivativeErrorFunction(solutions[i], outputs[i]);
         }
 
         // For the other layer, the computation is the same
