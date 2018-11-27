@@ -5,12 +5,18 @@ public class NeuralNetwork {
     private Layer[] layers;
     private DataSet dataSet;
     private String errorFunction;
+    private final double RELU_ALPHA = 0.1;
 
     public NeuralNetwork(int inputNeuronNumber,
                          int hiddenLayerNumber,
                          int hiddenNeuronNumber,
                          int outputNeuronNumber,
-                         String errorFunction){
+                         String[] activationFunc,
+                         String errorFunction) throws buildingError {
+
+        if(activationFunc.length != hiddenLayerNumber + 1){
+            throw new buildingError("You have provided " + activationFunc.length + " activation function(s) instead of " + (hiddenLayerNumber + 1));
+        }
 
         layers = new Layer[1+hiddenLayerNumber+1];
 
@@ -24,16 +30,16 @@ public class NeuralNetwork {
         for(int i=0 ; i<hiddenLayerNumber ; i++){
             // If we are on the last hidden layer, we should connect to the number of output neuron
             if(i+1 == hiddenLayerNumber){
-                layers[i+1] = new Layer(hiddenNeuronNumber, outputNeuronNumber, "sigmoid");
+                layers[i+1] = new Layer(hiddenNeuronNumber, outputNeuronNumber, activationFunc[i]);
             }
             // Otherwise, connect to the next layer
             else{
-                layers[i+1] = new Layer(hiddenNeuronNumber, hiddenNeuronNumber, "sigmoid");
+                layers[i+1] = new Layer(hiddenNeuronNumber, hiddenNeuronNumber, activationFunc[i]);
             }
         }
 
         // Init the output Layer
-        layers[1+hiddenLayerNumber+1-1] = new Layer(outputNeuronNumber,0, "sigmoid");
+        layers[1+hiddenLayerNumber+1-1] = new Layer(outputNeuronNumber,0, activationFunc[activationFunc.length - 1]);
 
         initWeightAndBias();
         initDelta();
@@ -117,7 +123,7 @@ public class NeuralNetwork {
 
     }
 
-    private double[] forwardPropagation(double[] inputs) throws trainingError {
+    public double[] forwardPropagation(double[] inputs) throws trainingError {
         // Our first layer start with the data input
         double[] currentInputs = inputs;
         double[] nextLayerInputs;
@@ -249,8 +255,14 @@ public class NeuralNetwork {
             switch (activationFunction){
                 case "sigmoid":
                     return (1.0 / (1.0 + Math.exp(-x)));
+                case "relu":
+                    if(x<0) return 0;
+                    else return x;
+                case "prelu":
+                    if(x<0) return x * RELU_ALPHA;
+                    else return x;
                 default:
-                    throw new trainingError("The error function " + errorFunction + " is not defined.");
+                    throw new trainingError("The activation function " + activationFunction + " is not defined.");
             }
         }
 
@@ -258,8 +270,14 @@ public class NeuralNetwork {
             switch (activationFunction){
                 case "sigmoid":
                     return x * (1.0 - x);
+                case "relu":
+                    if(x<0) return 0;
+                    else return 1;
+                case "prelu":
+                    if(x<0) return RELU_ALPHA;
+                    else return 1;
                 default:
-                    throw new trainingError("The error function " + errorFunction + " is not defined.");
+                    throw new trainingError("The activation function " + activationFunction + " is not defined.");
             }
         }
     }
@@ -292,6 +310,14 @@ public class NeuralNetwork {
 class trainingError extends Exception
 {
     public trainingError(String message)
+    {
+        super(message);
+    }
+}
+
+class buildingError extends Exception
+{
+    public buildingError(String message)
     {
         super(message);
     }
