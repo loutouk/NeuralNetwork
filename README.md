@@ -12,3 +12,8 @@ The program needs three arguments: the training file path, the testing file path
 The files should be in the CSV format, and the output neuron results should be placed at the beginning on the left.
 The results are better if the data are normalized before usage. x: (x - x.min()) / (x.max() - x.min())).
 
+## Iris Data set
+About this Dataset
+The Iris dataset was used in R.A. Fisher's classic 1936 paper, The Use of Multiple Measurements in Taxonomic Problems, and can also be found on the UCI Machine Learning Repository.
+It includes three iris species with 50 samples each as well as some properties about each flower. One flower species is linearly separable from the other two, but the other two are not linearly separable from each other.
+Hence the need for a multiperceptron, with at least one hidden layer.

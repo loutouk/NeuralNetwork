@@ -49,7 +49,8 @@ public class Main {
             // The number of solution output must match the number of neuron output
             // The number of hidden neuron number should be between inputNeurons and outputNeurons
             // The number of hidden layer is generally 1
-            NeuralNetwork nn = new NeuralNetwork(inputNeurons, 1, inputNeurons, outputNeurons, new String[]{"prelu","sigmoid"}, "squaredError");
+            NeuralNetwork nn = new NeuralNetwork(inputNeurons, 1, inputNeurons, outputNeurons,
+                    new String[]{"prelu","sigmoid"}, "squaredError");
             try {
                 nn.setDataSet(dataSet);
                 try {
