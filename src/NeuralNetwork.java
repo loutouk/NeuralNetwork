@@ -153,6 +153,7 @@ public class NeuralNetwork {
             currentInputs = nextLayerInputs;
         }
 
+
         return currentInputs;
     }
 
@@ -204,7 +205,6 @@ public class NeuralNetwork {
             for(int j=0 ; j<currentLayer.weightsPerNeurons.length ; j++){
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
                     currentLayer.deltaPerWeights[j][k] = layers[i+1].deltaPerNeurons[k] * currentLayer.outputPerNeurons[j];
-
                 }
             }
         }
@@ -218,8 +218,10 @@ public class NeuralNetwork {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        double sum = 0;
         int counter = 0;
-        double total = 0;
+
         for(int lineIndex=0 ; lineIndex<file.size() ; lineIndex++){
             String line = file.get(lineIndex);
             String[] cells = line.split(",");
@@ -228,14 +230,17 @@ public class NeuralNetwork {
             for(int i=0 ; i<outputNeurons ; i++) solutions[i] = Double.valueOf(cells[i]);
             for(int i=outputNeurons ; i<cells.length ; i++) inputs[i-outputNeurons] = Double.valueOf(cells[i]);
             try {
-                total += (Math.abs(this.forwardPropagation(inputs)[0] - solutions[0]));
-                //System.out.println(this.forwardPropagation(inputs)[0] + " == > " + solutions[0]);
+                double[] results = this.forwardPropagation(inputs);
+                for(int result=0 ; result<results.length ; result++){
+                    //System.out.println(results[result] + " => " + solutions[result]);
+                    sum += Math.abs(results[result] - solutions[result]);
+                    counter++;
+                }
             } catch (trainingError trainingError) {
                 trainingError.printStackTrace();
             }
-            counter++;
         }
-        return "Average error: " + total/(double)counter;
+        return "Average error on " + counter + " output(s) for " + counter/outputNeurons + " row(s): " + sum / (double) counter;
     }
 
     private void updateWeights(double learningRate) {
@@ -284,6 +289,8 @@ public class NeuralNetwork {
 
         public double activationFunction(double x) throws trainingError {
             switch (activationFunction){
+                case "tanh":
+                    return (2.0/(1+Math.exp(-x*2)))-1;
                 case "sigmoid":
                     return (1.0 / (1.0 + Math.exp(-x)));
                 case "relu":
@@ -299,6 +306,8 @@ public class NeuralNetwork {
 
         public double derivativeActivationFunction(double x) throws trainingError {
             switch (activationFunction){
+                case "tanh":
+                    return 1 - Math.pow(x,2);
                 case "sigmoid":
                     return x * (1.0 - x);
                 case "relu":

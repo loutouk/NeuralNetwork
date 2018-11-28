@@ -6,8 +6,7 @@ import java.util.List;
 
 /**
  * The training file should only contains numerical value in a CSV type file
- * Place the solution column first
- * The following example is using the first column as the solution (the price of the house)
+ * Place the solution(s) column(s) first on the left at the beginning
  */
 
 public class Main {
@@ -15,13 +14,15 @@ public class Main {
     public static void main(String[] args) throws buildingError {
 
         List<String> file;
-        int outputNeurons = 1; // the number of solution output for a data element
+        int outputNeurons; // the number of solution output for a data element
         int inputNeurons;
 
-        if(args.length != 2){
-            System.err.println("Please specify the name for the training file and the test file as a parameter");
+        if(args.length != 3){
+            System.err.println("Usage: train.csv test.csv outputNeuronsUmber");
             return;
         }
+
+        outputNeurons = Integer.parseInt(args[2]);
 
         String fileName = args[0];
         Path path = FileSystems.getDefault().getPath("./", fileName);
@@ -48,7 +49,7 @@ public class Main {
             // The number of solution output must match the number of neuron output
             // The number of hidden neuron number should be between inputNeurons and outputNeurons
             // The number of hidden layer is generally 1
-            NeuralNetwork nn = new NeuralNetwork(inputNeurons, 2, inputNeurons, outputNeurons, new String[]{"prelu","prelu","prelu"}, "squaredError");
+            NeuralNetwork nn = new NeuralNetwork(inputNeurons, 1, inputNeurons, outputNeurons, new String[]{"prelu","sigmoid"}, "squaredError");
             try {
                 nn.setDataSet(dataSet);
                 try {
