@@ -1,3 +1,8 @@
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Random;
 
 public class NeuralNetwork {
@@ -46,9 +51,13 @@ public class NeuralNetwork {
     }
 
     public void setDataSet(DataSet dataSet) throws trainingError {
+        // The number of input must match the number of neuron input
+        if(dataSet.getDatas()[0].getInputs().length != layers[0].neuronNumber){
+            throw new trainingError("The number of the dataset input must match the number of neuron input of the network");
+        }
         // The number of solution output must match the number of neuron output
         if(dataSet.getDatas()[0].getSolution().length != layers[layers.length-1].neuronNumber){
-            throw new trainingError("The number of the dataset solution output must match the number of neuron output of the network.");
+            throw new trainingError("The number of the dataset solution output must match the number of neuron output of the network");
         }
         this.dataSet = dataSet;
     }
@@ -90,7 +99,7 @@ public class NeuralNetwork {
         }
     }
 
-    public void train(double learningRate, double targetError, int maxEpochs) throws trainingError {
+    public void train(double learningRate, int maxEpochs) throws trainingError {
 
         if(dataSet == null){
             throw new trainingError("The data set must be initialized before the training.");
@@ -98,7 +107,6 @@ public class NeuralNetwork {
 
         // Iterate over the number of epochs to be completed
         for(int epoch=0 ; epoch<maxEpochs ; epoch++) {
-            double totalError = 0.0;
             // Iterate over all training examples
             for(int i=0 ; i<dataSet.getDatas().length; i++){
                 // Feed forward
@@ -107,20 +115,13 @@ public class NeuralNetwork {
                 double[] errors = new double[outputs.length];
                 for(int error=0 ; error<errors.length ; error++){
                     errors[error] = applyErrorFunction(outputs[error], dataSet.getDatas()[i].getSolution()[error]);
-                    totalError += errors[error];
                 }
                 // Run backpropagation
                 backPropagation(dataSet.getDatas()[i].getInputs(), dataSet.getDatas()[i].getSolution(), outputs);
                 // update the weights
                 updateWeights(learningRate);
             }
-
-            if(totalError < targetError){
-                System.out.println("Solution found after " + epoch + " epochs for target error at " + targetError);
-                break;
-            }
         }
-
     }
 
     public double[] forwardPropagation(double[] inputs) throws trainingError {
@@ -135,8 +136,7 @@ public class NeuralNetwork {
             for(int currentNeuron=0 ; currentNeuron<layers[currentLayer].weightsPerNeurons.length; currentNeuron++){
                 for(int currentWeight=0 ; currentWeight<layers[currentLayer].weightsPerNeurons[currentNeuron].length ; currentWeight++){
                     nextLayerInputs[currentWeight] +=
-                            layers[currentLayer].weightsPerNeurons[currentNeuron][currentWeight] *
-                            currentInputs[currentNeuron];
+                            layers[currentLayer].weightsPerNeurons[currentNeuron][currentWeight] * currentInputs[currentNeuron];
                 }
             }
 
@@ -178,11 +178,13 @@ public class NeuralNetwork {
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
                     sumWeightByPreviousNeuron +=
                             currentLayer.weightsPerNeurons[j][k] *
-                            layers[i+1].deltaPerNeurons[k];
+                                    layers[i+1].deltaPerNeurons[k];
+
                 }
+
                 currentLayer.deltaPerNeurons[j] =
                         sumWeightByPreviousNeuron *
-                        currentLayer.derivativeActivationFunction(currentLayer.outputPerNeurons[j]);
+                                currentLayer.derivativeActivationFunction(currentLayer.outputPerNeurons[j]);
             }
         }
 
@@ -202,9 +204,38 @@ public class NeuralNetwork {
             for(int j=0 ; j<currentLayer.weightsPerNeurons.length ; j++){
                 for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
                     currentLayer.deltaPerWeights[j][k] = layers[i+1].deltaPerNeurons[k] * currentLayer.outputPerNeurons[j];
+
                 }
             }
         }
+    }
+
+    public String test(String filePath, int outputNeurons, int inputNeurons){
+        Path path = FileSystems.getDefault().getPath("./", filePath);
+        List<String> file = null;
+        try {
+            file = Files.readAllLines(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int counter = 0;
+        double total = 0;
+        for(int lineIndex=0 ; lineIndex<file.size() ; lineIndex++){
+            String line = file.get(lineIndex);
+            String[] cells = line.split(",");
+            double[] solutions = new double[outputNeurons];
+            double[] inputs = new double[inputNeurons];
+            for(int i=0 ; i<outputNeurons ; i++) solutions[i] = Double.valueOf(cells[i]);
+            for(int i=outputNeurons ; i<cells.length ; i++) inputs[i-outputNeurons] = Double.valueOf(cells[i]);
+            try {
+                total += (Math.abs(this.forwardPropagation(inputs)[0] - solutions[0]));
+                //System.out.println(this.forwardPropagation(inputs)[0] + " == > " + solutions[0]);
+            } catch (trainingError trainingError) {
+                trainingError.printStackTrace();
+            }
+            counter++;
+        }
+        return "Average error: " + total/(double)counter;
     }
 
     private void updateWeights(double learningRate) {
@@ -262,7 +293,7 @@ public class NeuralNetwork {
                     if(x<0) return x * RELU_ALPHA;
                     else return x;
                 default:
-                    throw new trainingError("The activation function " + activationFunction + " is not defined.");
+                    throw new trainingError("The activation function " + activationFunction + " is not defined");
             }
         }
 
@@ -277,13 +308,13 @@ public class NeuralNetwork {
                     if(x<0) return RELU_ALPHA;
                     else return 1;
                 default:
-                    throw new trainingError("The activation function " + activationFunction + " is not defined.");
+                    throw new trainingError("The activation function " + activationFunction + " is not defined");
             }
         }
     }
 
     private double getRandom(){
-        return 1/(Math.sqrt(2))-new Random().nextDouble();
+        return ((new Random().nextDouble()*2-new Random().nextDouble()));
     }
 
     public double applyErrorFunction(double target, double input) throws trainingError {
@@ -291,7 +322,7 @@ public class NeuralNetwork {
             case "squaredError":
                 return 0.5 * Math.pow((target - input), 2);
             default:
-                throw new trainingError("The error function " + errorFunction + " is not defined.");
+                throw new trainingError("The error function " + errorFunction + " is not defined");
         }
 
     }
@@ -301,7 +332,7 @@ public class NeuralNetwork {
             case "squaredError":
                 return output - solution;
             default:
-                throw new trainingError("The error function " + errorFunction + " is not defined.");
+                throw new trainingError("The error function " + errorFunction + " is not defined");
         }
 
     }

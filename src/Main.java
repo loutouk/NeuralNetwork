@@ -1,33 +1,72 @@
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+/**
+ * The training file should only contains numerical value in a CSV type file
+ * Place the solution column first
+ * The following example is using the first column as the solution (the price of the house)
+ */
+
 public class Main {
 
-    public static void main(String[] a) throws buildingError {
+    public static void main(String[] args) throws buildingError {
 
-        NeuralNetwork nn = new NeuralNetwork(2,
-                1,
-                2,
-                1,
-                new String[]{"prelu", "sigmoid"},
-                "squaredError");
-        // The number of solution output must match the number of neuron output
-        Data dataA = new Data(new double[]{0.0}, new double[]{1.0, 1.0});
-        Data dataB = new Data(new double[]{1.0}, new double[]{0.0, 1.0});
-        Data dataC = new Data(new double[]{1.0}, new double[]{1.0, 0.0});
-        Data dataD = new Data(new double[]{0.0}, new double[]{0.0, 0.0});
-        DataSet dataSet = new DataSet(new Data[]{dataA, dataB, dataC, dataD});
+        List<String> file;
+        int outputNeurons = 1; // the number of solution output for a data element
+        int inputNeurons;
+
+        if(args.length != 2){
+            System.err.println("Please specify the name for the training file and the test file as a parameter");
+            return;
+        }
+
+        String fileName = args[0];
+        Path path = FileSystems.getDefault().getPath("./", fileName);
+
         try {
-            nn.setDataSet(dataSet);
+
+            file = Files.readAllLines(path);
+            inputNeurons = file.get(0).split(",").length - outputNeurons;
+            Data[] datas = new Data[file.size()];
+            for(int lineIndex=0 ; lineIndex<datas.length ; lineIndex++){
+                String line = file.get(lineIndex);
+                String[] cells = line.split(",");
+                double[] solutions = new double[outputNeurons];
+                double[] inputs = new double[inputNeurons];
+                for(int i=0 ; i<outputNeurons ; i++) solutions[i] = Double.valueOf(cells[i]);
+                for(int i=outputNeurons ; i<cells.length ; i++) inputs[i-outputNeurons] = Double.valueOf(cells[i]);
+                Data data = new Data(solutions, inputs);
+                datas[lineIndex] = data;
+            }
+
+            DataSet dataSet = new DataSet(datas);
+
+            // The number of input must match the number of neuron input
+            // The number of solution output must match the number of neuron output
+            // The number of hidden neuron number should be between inputNeurons and outputNeurons
+            // The number of hidden layer is generally 1
+            NeuralNetwork nn = new NeuralNetwork(inputNeurons, 2, inputNeurons, outputNeurons, new String[]{"prelu","prelu","prelu"}, "squaredError");
             try {
-                nn.train( 0.1, 0.1,100000);
-                System.out.println(nn.forwardPropagation(new double[]{0.0, 0.0})[0]);
-                System.out.println(nn.forwardPropagation(new double[]{1.0, 1.0})[0]);
-                System.out.println(nn.forwardPropagation(new double[]{1.0, 0.0})[0]);
-                System.out.println(nn.forwardPropagation(new double[]{0.0, 1.0})[0]);
+                nn.setDataSet(dataSet);
+                try {
+                    nn.train( 0.01, 10000);
+                    System.out.println(nn.test(args[1], outputNeurons, inputNeurons));
+                } catch (trainingError trainingError) {
+                    trainingError.printStackTrace();
+                }
             } catch (trainingError trainingError) {
                 trainingError.printStackTrace();
             }
-        } catch (trainingError trainingError) {
-            trainingError.printStackTrace();
+        } catch (IOException e) {
+            System.err.println("File " + fileName + " can not be found");
+            e.printStackTrace();
+            return;
         }
+
+
     }
 
 }
