@@ -10,6 +10,7 @@ public class NeuralNetwork {
     private Layer[] layers;
     private DataSet dataSet;
     private String errorFunction;
+    private String initMethod;
     private final double RELU_ALPHA = 0.1;
 
     public NeuralNetwork(int inputNeuronNumber,
@@ -17,11 +18,14 @@ public class NeuralNetwork {
                          int hiddenNeuronNumber,
                          int outputNeuronNumber,
                          String[] activationFunc,
-                         String errorFunction) throws buildingError {
+                         String errorFunction,
+                         String initMethod) throws buildingError {
 
         if(activationFunc.length != hiddenLayerNumber + 1){
             throw new buildingError("You have provided " + activationFunc.length + " activation function(s) instead of " + (hiddenLayerNumber + 1));
         }
+
+        this.initMethod = initMethod;
 
         layers = new Layer[1+hiddenLayerNumber+1];
 
@@ -62,23 +66,43 @@ public class NeuralNetwork {
         this.dataSet = dataSet;
     }
 
-    private void initWeightAndBias(){
+    private void initWeightAndBias() throws buildingError {
         // each layer
         for(int i=0 ; i<layers.length ; i++){
+            System.out.println();
             // each neuron
             for(int j=0 ; j<layers[i].weightsPerNeurons.length ; j++){
-
                 // as there is one bias per neuron, we init the bias in the same time
                 // the first layer has no bias
                 if(i==0){
                     layers[i].bias[j] = 0;
                 }else{
-                    layers[i].bias[j] = getRandom();
+                    switch (initMethod){
+                        case "Xavier":
+                            // We add one to the input neurons number for the bias
+                            layers[i].bias[j] = getXavierRandom(layers[i].weightsPerNeurons.length+1);
+                            break;
+                        case "Random":
+                            layers[i].bias[j] = getRandom();
+                            break;
+                        default:
+                            throw new buildingError("The initialisation function " + initMethod + " is not defined. Choose between 'Xavier' or 'Random'");
+                    }
                 }
 
                 // each weight for the current neuron
                 for(int k=0 ; k<layers[i].weightsPerNeurons[j].length ; k++){
-                    layers[i].weightsPerNeurons[j][k] = getRandom();
+                    switch (initMethod){
+                        case "Xavier":
+                            // We add one to the input neurons number for the bias
+                            layers[i].weightsPerNeurons[j][k] = getXavierRandom(layers[i+1].weightsPerNeurons.length+1);
+                            break;
+                        case "Random":
+                            layers[i].weightsPerNeurons[j][k] = getRandom();
+                            break;
+                        default:
+                            throw new buildingError("The initialisation function " + initMethod + " is not defined. Choose between 'Xavier' or 'Random'");
+                    }
                 }
             }
         }
@@ -210,6 +234,68 @@ public class NeuralNetwork {
         }
     }
 
+    private void updateWeights(double learningRate) {
+        for(int i=0 ; i<layers.length-1 ; i++){
+            Layer currentLayer = layers[i];
+            for(int j=0 ; j<currentLayer.weightsPerNeurons.length ; j++){
+                for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
+                    // Update the weight
+                    currentLayer.weightsPerNeurons[j][k] -= currentLayer.deltaPerWeights[j][k] * learningRate;
+                }
+                // Update the bias
+                currentLayer.bias[j] -= currentLayer.deltaPerNeurons[j] * learningRate;
+            }
+        }
+        // Update the last layer bias neuron
+        Layer lastLayer = layers[layers.length-1];
+        // For each neuron of the last layer
+        for(int i=0 ; i<lastLayer.neuronNumber ; i++){
+            lastLayer.bias[i] -= lastLayer.deltaPerNeurons[i] * learningRate;
+        }
+    }
+
+    private double getRandom(){
+        return new Random().nextGaussian()/2;
+    }
+
+    private double getXavierRandom(int inputNeurons)
+    {
+         /** How to prevent sigmoid and tanh functions to be saturated?
+         By adjusting the weights according to the number of the function's input neurons number
+         The idea is randomizing the initial weights,
+         so that the inputs of each activation function fall within the sweet range of the activation function.
+         Ideally, none of the neurons should start with a trapped situation.
+         The nextGaussian() method returns random numbers with a mean of 0 and a standard deviation of 1
+         To change the standard deviation, we multiply the value
+         Example with an average value of 0 and a standard deviation of 15: r.nextGaussian() * 15
+         For the Xavier initialisation:
+         We initialize the weights in the network by drawing them from a distribution with zero mean and a specific variance
+         The specific variance is var(weight) = 1 / inputNeurons
+         The standard deviation is the square root of the variance **/
+
+        return new Random().nextGaussian() * (1.0/(double)inputNeurons);
+    }
+
+    public double applyErrorFunction(double target, double input) throws trainingError {
+        switch (errorFunction){
+            case "squaredError":
+                return 0.5 * Math.pow((target - input), 2);
+            default:
+                throw new trainingError("The error function " + errorFunction + " is not defined");
+        }
+
+    }
+
+    public double applyDerivativeErrorFunction(double solution, double output) throws trainingError {
+        switch (errorFunction){
+            case "squaredError":
+                return output - solution;
+            default:
+                throw new trainingError("The error function " + errorFunction + " is not defined");
+        }
+
+    }
+
     public String test(String filePath, int outputNeurons, int inputNeurons){
         Path path = FileSystems.getDefault().getPath("./", filePath);
         List<String> file = null;
@@ -236,6 +322,7 @@ public class NeuralNetwork {
                     sum += Math.abs(results[result] - solutions[result]);
                     counter++;
                 }
+                System.out.println();
             } catch (trainingError trainingError) {
                 trainingError.printStackTrace();
             }
@@ -243,29 +330,9 @@ public class NeuralNetwork {
         return "Average error on " + counter + " output(s) for " + counter/outputNeurons + " row(s): " + sum / (double) counter;
     }
 
-    private void updateWeights(double learningRate) {
-        for(int i=0 ; i<layers.length-1 ; i++){
-            Layer currentLayer = layers[i];
-            for(int j=0 ; j<currentLayer.weightsPerNeurons.length ; j++){
-                for(int k=0 ; k<currentLayer.weightsPerNeurons[j].length ; k++){
-                    // Update the weight
-                    currentLayer.weightsPerNeurons[j][k] -= currentLayer.deltaPerWeights[j][k] * learningRate;
-                }
-                // Update the bias
-                currentLayer.bias[j] -= currentLayer.deltaPerNeurons[j] * learningRate;
-            }
-        }
-        // Update the last layer bias neuron
-        Layer lastLayer = layers[layers.length-1];
-        // For each neuron of the last layer
-        for(int i=0 ; i<lastLayer.neuronNumber ; i++){
-            lastLayer.bias[i] -= lastLayer.deltaPerNeurons[i] * learningRate;
-        }
-    }
-
     class Layer{
 
-        public double[][] weightsPerNeurons; // double[neuron][neuron weights]
+        public double[][] weightsPerNeurons; // double[neuron][neuron weight]
         public double[][] deltaPerWeights;
         public double[] deltaPerNeurons;
         public double[] outputPerNeurons;
@@ -320,30 +387,6 @@ public class NeuralNetwork {
                     throw new trainingError("The activation function " + activationFunction + " is not defined");
             }
         }
-    }
-
-    private double getRandom(){
-        return ((new Random().nextDouble()*2-new Random().nextDouble()));
-    }
-
-    public double applyErrorFunction(double target, double input) throws trainingError {
-        switch (errorFunction){
-            case "squaredError":
-                return 0.5 * Math.pow((target - input), 2);
-            default:
-                throw new trainingError("The error function " + errorFunction + " is not defined");
-        }
-
-    }
-
-    public double applyDerivativeErrorFunction(double solution, double output) throws trainingError {
-        switch (errorFunction){
-            case "squaredError":
-                return output - solution;
-            default:
-                throw new trainingError("The error function " + errorFunction + " is not defined");
-        }
-
     }
 }
 
