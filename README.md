@@ -10,7 +10,8 @@ If it is impossible, some minor changes in the Dataset and NeuralNetwork code sh
 ## Usage
 The program needs three arguments: the training file path, the testing file path, and the number of output neurons/solution columns.
 The files should be in the CSV format, and the output neuron results should be placed at the beginning on the left.
-The results are better if the data are normalized before usage. x: (x - x.min()) / (x.max() - x.min())).
+The results are better if the data are normalized before usage. x_norm: (x - x.min()) / (x.max() - x.min())).
+To denormalize the data x: x_norm * (x.max() − x.min()) + x.min().
 
 ## Iris Data set
 About this Dataset

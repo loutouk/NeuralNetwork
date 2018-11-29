@@ -318,11 +318,10 @@ public class NeuralNetwork {
             try {
                 double[] results = this.forwardPropagation(inputs);
                 for(int result=0 ; result<results.length ; result++){
-                    //System.out.println(results[result] + " => " + solutions[result]);
+                    System.out.println(results[result] + ", " + solutions[result]);
                     sum += Math.abs(results[result] - solutions[result]);
                     counter++;
                 }
-                System.out.println();
             } catch (trainingError trainingError) {
                 trainingError.printStackTrace();
             }
