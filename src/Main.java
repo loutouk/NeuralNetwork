@@ -50,12 +50,12 @@ public class Main {
             // The number of hidden neuron number should be between inputNeurons and outputNeurons
             // The number of hidden layer is generally 1
             NeuralNetwork nn = new NeuralNetwork(inputNeurons, 1, inputNeurons, outputNeurons,
-                    new String[]{"prelu","sigmoid"}, "squaredError", "Xavier");
+                    new String[]{"sigmoid","sigmoid"}, "squaredError", "Xavier");
             try {
                 nn.setDataSet(dataSet);
                 try {
-                    nn.train( 0.01, 10000);
-                    //System.out.println(nn.test(args[1], outputNeurons, inputNeurons));
+                    nn.train( 0.01, 100);
+                    System.out.println(nn.test(args[1], outputNeurons, inputNeurons));
                 } catch (trainingError trainingError) {
                     trainingError.printStackTrace();
                 }
