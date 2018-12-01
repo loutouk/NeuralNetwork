@@ -320,7 +320,7 @@ public class NeuralNetwork {
                 for(int result=0 ; result<results.length ; result++){
                     //System.out.println(results[result] + ", " + solutions[result]);
                     //x_norm * (x.max() − x.min()) + x.min()
-                    //System.out.println((results[result] * (755000.0-35311) + 35311.0) + ", " + (solutions[result] * (755000.0-35311.0) + 35311.0));
+                    //System.out.println((results[result] * (max-min) + min) + ", " + (solutions[result] * (max-min) + min));
                     sum += Math.abs(results[result] - solutions[result]);
                     counter++;
                 }
