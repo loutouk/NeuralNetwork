@@ -1,7 +1,7 @@
 # Multi Purpose Neural Network
 ## About
 
-This program allows the user to create a neural network of any size and shape, train it, and exploit it.
+This program allows the user to create a neural network of any size and shape, train it, and use it.
 The number of layers, neurons, learning rate, number of epochs... are customizable.
 The user can choose the activation function for each layer. If the function has not been implemented yet, it can easily be done by computing the function and its derivative.
 The input data for training and testing has to fit the Dataset class. Hence only numerical values.
